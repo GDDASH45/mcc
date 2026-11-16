@@ -26,7 +26,7 @@ LD_OBJECTS   := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LD_SOURCES))
 CPP_OBJECTS  := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(CPP_SOURCES))
 LIBC_OBJECTS := $(patsubst $(LIBCDIR)/%.c,$(OBJDIR)/libc/%.o,$(LIBC_SOURCES))
 
-LIBC_CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -O2 -ffreestanding -fno-builtin -fno-stack-protector -Ilibc/include
+LIBC_CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -O2 -ffreestanding -fno-builtin -fno-stack-protector -fno-pic -fno-pie -Ilibc/include
 
 ifeq ($(TARGET_ARCH),x86_64)
 LIBC_ARCH_FLAGS := -m64
