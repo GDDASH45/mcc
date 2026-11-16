@@ -102,7 +102,7 @@ int main(int argc,char **argv)
         else if(!input)input=argv[i];
         else {fprintf(stderr,"mcc-ld: this initial linker accepts one input object\n");return 2;}
     }
-    if(!input||!output||(strcmp(target,"i386")&&strcmp(target,"x86_64))){fprintf(stderr,"usage: mcc-ld --target <i386|x86_64> -o output.elf input.o\n");return 2;}
+    if(!input||!output||(strcmp(target,"i386")&&strcmp(target,"x86_64"))){fprintf(stderr,"usage: mcc-ld --target <i386|x86_64> -o output.elf input.o\n");return 2;}
     if(link_file(input,output,!strcmp(target,"x86_64"))){fprintf(stderr,"mcc-ld: link failed\n");return 1;}
     return 0;
 }
