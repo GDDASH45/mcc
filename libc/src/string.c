@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n)
@@ -18,11 +19,11 @@ void *memmove(void *dest, const void *src, size_t n)
     unsigned char *d = dest;
     const unsigned char *s = src;
 
-    if (d < s) {
+    if ((uintptr_t)d < (uintptr_t)s) {
         for (size_t i = 0; i < n; ++i) {
             d[i] = s[i];
         }
-    } else if (d > s) {
+    } else if ((uintptr_t)d > (uintptr_t)s) {
         while (n != 0) {
             --n;
             d[n] = s[n];
