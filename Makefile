@@ -7,6 +7,8 @@ LDLIBS   ?=
 
 TARGETS      := mcc mcc-as mcc-ld mcc-cpp
 LIBC_TARGET  := libmcclib.a
+CRT_TARGET   := mcrt0.o
+CRT_SOURCE   := libc/crt/crt0.S
 SRCDIR       := src
 LIBCDIR      := libc/src
 OBJDIR       := build
@@ -27,16 +29,18 @@ LIBC_OBJECTS := $(patsubst $(LIBCDIR)/%.c,$(OBJDIR)/libc/%.o,$(LIBC_SOURCES))
 LIBC_CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -O2 -ffreestanding -fno-builtin -fno-stack-protector -Ilibc/include
 
 ifeq ($(TARGET_ARCH),x86_64)
-LIBC_CFLAGS  += -m64
+LIBC_ARCH_FLAGS := -m64
 else ifeq ($(TARGET_ARCH),i386)
-LIBC_CFLAGS  += -m32
+LIBC_ARCH_FLAGS := -m32
 else
 $(error Unsupported TARGET_ARCH '$(TARGET_ARCH)'; use x86_64 or i386)
 endif
 
-.PHONY: all clean libc
+LIBC_CFLAGS += $(LIBC_ARCH_FLAGS)
 
-all: $(TARGETS) $(LIBC_TARGET)
+.PHONY: all clean libc crt
+
+all: $(TARGETS) $(LIBC_TARGET) $(CRT_TARGET)
 
 mcc: $(MCC_OBJECTS)
 	@echo "  LD      $@"
@@ -68,8 +72,14 @@ $(OBJDIR)/libc/%.o: $(LIBCDIR)/%.c
 	@mkdir -p $(dir $@)
 	@$(CC) $(LIBC_CFLAGS) -c -o $@ $<
 
+$(CRT_TARGET): $(CRT_SOURCE)
+	@echo "  AS      $< ($(TARGET_ARCH) startup)"
+	@$(CC) $(LIBC_ARCH_FLAGS) -c -o $@ $<
+
 libc: $(LIBC_TARGET)
+
+crt: $(CRT_TARGET)
 
 clean:
 	@echo "  CLEAN"
-	@rm -rf $(OBJDIR) $(TARGETS) $(LIBC_TARGET)
+	@rm -rf $(OBJDIR) $(TARGETS) $(LIBC_TARGET) $(CRT_TARGET)
