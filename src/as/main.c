@@ -87,19 +87,23 @@ static int write_object(const char *path, struct buffer *text, int is64)
         h.e_ident[EI_MAG0]=ELFMAG0; h.e_ident[EI_MAG1]=ELFMAG1; h.e_ident[EI_MAG2]=ELFMAG2; h.e_ident[EI_MAG3]=ELFMAG3;
         h.e_ident[EI_CLASS]=ELFCLASS64; h.e_ident[EI_DATA]=ELFDATA2LSB; h.e_ident[EI_VERSION]=EV_CURRENT;
         h.e_type=ET_REL; h.e_machine=EM_X86_64; h.e_version=EV_CURRENT; h.e_ehsize=sizeof(h);
-        h.e_shoff=sizeof(h)+text->size; h.e_shentsize=sizeof(Elf64_Shdr); h.e_shnum=3; h.e_shstrndx=2;
+        h.e_shoff=(sizeof(h)+text->size+7U)&~(uint64_t)7U; h.e_shentsize=sizeof(Elf64_Shdr); h.e_shnum=3; h.e_shstrndx=2;
         s[1].sh_name=1; s[1].sh_type=SHT_PROGBITS; s[1].sh_flags=SHF_ALLOC|SHF_EXECINSTR; s[1].sh_offset=sizeof(h); s[1].sh_size=text->size; s[1].sh_addralign=16;
         s[2].sh_name=7; s[2].sh_type=SHT_STRTAB; s[2].sh_offset=h.e_shoff+sizeof(Elf64_Shdr)*3; s[2].sh_size=sizeof(names); s[2].sh_addralign=1;
-        ok=fwrite(&h,sizeof(h),1,f)==1 && fwrite(text->data,text->size,1,f)==1 && fwrite(s,sizeof(s),1,f)==1 && fwrite(names,sizeof(names),1,f)==1;
+        ok=fwrite(&h,sizeof(h),1,f)==1 && fwrite(text->data,text->size,1,f)==1;
+        if(ok) { unsigned char pad[8]={0}; size_t used=sizeof(h)+text->size; ok=fwrite(pad,1,(size_t)h.e_shoff-used,f)==(size_t)h.e_shoff-used; }
+        if(ok) ok=fwrite(s,sizeof(s),1,f)==1 && fwrite(names,sizeof(names),1,f)==1;
     } else {
         Elf32_Ehdr h={0}; Elf32_Shdr s[3]={{0}};
         h.e_ident[EI_MAG0]=ELFMAG0; h.e_ident[EI_MAG1]=ELFMAG1; h.e_ident[EI_MAG2]=ELFMAG2; h.e_ident[EI_MAG3]=ELFMAG3;
         h.e_ident[EI_CLASS]=ELFCLASS32; h.e_ident[EI_DATA]=ELFDATA2LSB; h.e_ident[EI_VERSION]=EV_CURRENT;
         h.e_type=ET_REL; h.e_machine=EM_386; h.e_version=EV_CURRENT; h.e_ehsize=sizeof(h);
-        h.e_shoff=sizeof(h)+text->size; h.e_shentsize=sizeof(Elf32_Shdr); h.e_shnum=3; h.e_shstrndx=2;
+        h.e_shoff=(sizeof(h)+text->size+3U)&~(uint32_t)3U; h.e_shentsize=sizeof(Elf32_Shdr); h.e_shnum=3; h.e_shstrndx=2;
         s[1].sh_name=1; s[1].sh_type=SHT_PROGBITS; s[1].sh_flags=SHF_ALLOC|SHF_EXECINSTR; s[1].sh_offset=sizeof(h); s[1].sh_size=text->size; s[1].sh_addralign=16;
         s[2].sh_name=7; s[2].sh_type=SHT_STRTAB; s[2].sh_offset=h.e_shoff+sizeof(Elf32_Shdr)*3; s[2].sh_size=sizeof(names); s[2].sh_addralign=1;
-        ok=fwrite(&h,sizeof(h),1,f)==1 && fwrite(text->data,text->size,1,f)==1 && fwrite(s,sizeof(s),1,f)==1 && fwrite(names,sizeof(names),1,f)==1;
+        ok=fwrite(&h,sizeof(h),1,f)==1 && fwrite(text->data,text->size,1,f)==1;
+        if(ok) { unsigned char pad[4]={0}; size_t used=sizeof(h)+text->size; ok=fwrite(pad,1,(size_t)h.e_shoff-used,f)==(size_t)h.e_shoff-used; }
+        if(ok) ok=fwrite(s,sizeof(s),1,f)==1 && fwrite(names,sizeof(names),1,f)==1;
     }
     if(fclose(f)) ok=0;
     return ok?chmod(path,0644):-1;
