@@ -5,17 +5,23 @@ CPPFLAGS += -Iinclude
 LDFLAGS  ?=
 LDLIBS   ?=
 
-TARGET       := mcc
+TARGETS      := mcc mcc-as mcc-ld mcc-cpp
 LIBC_TARGET  := libmcclib.a
 SRCDIR       := src
 LIBCDIR      := libc/src
 OBJDIR       := build
 TARGET_ARCH  ?= x86_64
 
-SOURCES      := $(shell find $(SRCDIR) -type f -name '*.c')
-OBJECTS      := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SOURCES))
-
+MCC_SOURCES  := $(shell find $(SRCDIR) -maxdepth 2 -type f -name '*.c' ! -path '$(SRCDIR)/as/*' ! -path '$(SRCDIR)/ld/*' ! -path '$(SRCDIR)/cpp/*')
+AS_SOURCES   := $(shell find $(SRCDIR)/as -type f -name '*.c')
+LD_SOURCES   := $(shell find $(SRCDIR)/ld -type f -name '*.c')
+CPP_SOURCES  := $(shell find $(SRCDIR)/cpp -type f -name '*.c')
 LIBC_SOURCES := $(shell find $(LIBCDIR) -type f -name '*.c')
+
+MCC_OBJECTS  := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(MCC_SOURCES))
+AS_OBJECTS   := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(AS_SOURCES))
+LD_OBJECTS   := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(LD_SOURCES))
+CPP_OBJECTS  := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(CPP_SOURCES))
 LIBC_OBJECTS := $(patsubst $(LIBCDIR)/%.c,$(OBJDIR)/libc/%.o,$(LIBC_SOURCES))
 
 LIBC_CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -O2 -ffreestanding -fno-builtin -fno-stack-protector -Ilibc/include
@@ -30,9 +36,21 @@ endif
 
 .PHONY: all clean libc
 
-all: $(TARGET) $(LIBC_TARGET)
+all: $(TARGETS) $(LIBC_TARGET)
 
-$(TARGET): $(OBJECTS)
+mcc: $(MCC_OBJECTS)
+	@echo "  LD      $@"
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+mcc-as: $(AS_OBJECTS)
+	@echo "  LD      $@"
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+mcc-ld: $(LD_OBJECTS)
+	@echo "  LD      $@"
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+mcc-cpp: $(CPP_OBJECTS)
 	@echo "  LD      $@"
 	@$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -54,4 +72,4 @@ libc: $(LIBC_TARGET)
 
 clean:
 	@echo "  CLEAN"
-	@rm -rf $(OBJDIR) $(TARGET) $(LIBC_TARGET)
+	@rm -rf $(OBJDIR) $(TARGETS) $(LIBC_TARGET)
