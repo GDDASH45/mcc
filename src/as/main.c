@@ -45,16 +45,39 @@ static int emit_instruction(struct buffer *b, char *line, int is64)
     if (!strcmp(line,"xor eax, eax")) return append(b,xor_eax,sizeof(xor_eax));
     if (!strcmp(line,"xor ebx, ebx")) return append(b,xor_ebx,sizeof(xor_ebx));
     if (!strcmp(line,"xor edi, edi") && is64) return append(b,xor_edi,sizeof(xor_edi));
-    const char *regs[] = {"mov eax,","mov ebx,","mov edi,","mov rax,"};
-    const unsigned char opcodes[] = {0xb8,0xbb,0xbf,0xb8};
-    for (size_t r=0;r<4;r++) {
+    const char *regs[] = {"mov eax,","mov ebx,","mov edi,","mov rax,","mov rdi,"};
+    const unsigned char opcodes[] = {0xb8,0xbb,0xbf,0xc7,0xc7};
+    const unsigned char modrm[] = {0,0,0,0xc0,0xc7};
+    for (size_t r=0;r<5;r++) {
         size_t n=strlen(regs[r]);
-        if ((r==2 || r==3) && !is64) continue;
+        if ((r==2 || r==3 || r==4) && !is64) continue;
         if (!strncmp(line,regs[r],n)) {
+            char *value_text=trim(line+n);
             char *end;
-            unsigned long value=strtoul(trim(line+n),&end,0);
-            if (*trim(end) || end==line+n || value>0xffffffffUL) return -1;
-            unsigned char code[5]={opcodes[r],(unsigned char)value,(unsigned char)(value>>8),(unsigned char)(value>>16),(unsigned char)(value>>24)};
+            long long value=strtoll(value_text,&end,0);
+            if (end==value_text || *trim(end) || errno==ERANGE) return -1;
+
+            if (r>=3) {
+                if (value<INT32_MIN || value>INT32_MAX) return -1;
+                unsigned char code[7]={
+                    0x48,opcodes[r],modrm[r],
+                    (unsigned char)value,
+                    (unsigned char)((uint32_t)value>>8),
+                    (unsigned char)((uint32_t)value>>16),
+                    (unsigned char)((uint32_t)value>>24)
+                };
+                return append(b,code,sizeof(code));
+            }
+
+            if (value<0 || (unsigned long long)value>UINT32_MAX) return -1;
+            uint32_t immediate=(uint32_t)value;
+            unsigned char code[5]={
+                opcodes[r],
+                (unsigned char)immediate,
+                (unsigned char)(immediate>>8),
+                (unsigned char)(immediate>>16),
+                (unsigned char)(immediate>>24)
+            };
             return append(b,code,sizeof(code));
         }
     }
