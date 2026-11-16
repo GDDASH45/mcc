@@ -1,13 +1,14 @@
-
 # Build output
 /build/
 /mcc
+/libmcclib.a
 
-# Object files
+# Compiled objects and archives
 *.o
 *.obj
+*.a
 
-# ELF binaries
+# Generated ELF executables
 *.elf
 
 # Debug symbols
