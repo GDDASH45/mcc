@@ -3,5 +3,5 @@
 
 _start:
     mov rax, 60
-    mov rdi, 42
+    mov rdi, 0
     syscall
