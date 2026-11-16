@@ -1,0 +1,28 @@
+
+# Build output
+/build/
+/mcc
+
+# Object files
+*.o
+*.obj
+
+# ELF binaries
+*.elf
+
+# Debug symbols
+*.dSYM/
+*.debug
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# IDE directories
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
